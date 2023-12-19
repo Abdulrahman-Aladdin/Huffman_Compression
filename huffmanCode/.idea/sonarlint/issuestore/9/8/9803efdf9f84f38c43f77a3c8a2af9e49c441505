@@ -1,0 +1,13 @@
+
+k
+java:S2095*"NUse try-with-resources or close this "FileOutputStream" in a "finally" clause.(¾Š¿†8›ÓÚÈ1
+C
+java:S1170"!Make this final field static too.(£ÀÙ¦şÿÿÿÿ8œÓÚÈ1
+G	java:S106"+Replace this use of System.out by a logger.( „òè8¡ÓÚÈ1
+L	java:S106"+Replace this use of System.out by a logger.(˜¯Øúÿÿÿÿ8¾ƒÜÈ1
+L	java:S106$"+Replace this use of System.out by a logger.(©şêÜúÿÿÿÿ8ÃªÜÈ1
+Z
+java:S1854."8Remove this useless assignment to local variable "read".(‘¸àŠşÿÿÿÿ8¢ÓÚÈ1
+K
+java:S1481.")Remove this unused "read" local variable.(‘¸àŠşÿÿÿÿ8£ÓÚÈ1
+j	java:S100="NRename this method name to match the regular expression '^[a-z][a-zA-Z0-9]*$'.(—¿•8¥ÓÚÈ1

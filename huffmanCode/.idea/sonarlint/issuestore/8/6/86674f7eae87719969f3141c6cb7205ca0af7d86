@@ -1,0 +1,6 @@
+
+r
+java:S1206#"PThis class overrides "equals()" and should therefore also override "hashCode()".(İ¢êÍıÿÿÿÿ8•á¿‡È1
+L	java:S106"+Replace this use of System.out by a logger.(©şêÜúÿÿÿÿ8Ä»«‡È1
+C
+java:S1168"&Return an empty array instead of null.(¥¹ï8Å»«‡È1

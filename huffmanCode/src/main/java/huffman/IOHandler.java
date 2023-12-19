@@ -23,6 +23,7 @@ public class IOHandler {
         String bytes = "";
         try {
             bytes = Base64.getEncoder().encodeToString(Files.readAllBytes(Paths.get(path)));
+
         } catch (IOException e) {
             logger.severe(e.getMessage());
         }
@@ -48,6 +49,26 @@ public class IOHandler {
     public void writeBytes(String data) {
         try {
             Files.write(Paths.get(getOutputPath()), Base64.getDecoder().decode(data));
+
+        } catch (IOException e) {
+            logger.severe(e.getMessage());
+        }
+    }
+
+    public byte[] readCompressed() {
+        try {
+            return Files.readAllBytes(Paths.get(path));
+
+        } catch (IOException e) {
+            logger.severe(e.getMessage());
+        }
+        return null;
+    }
+
+    public void writeCompressed(byte[] encoded) {
+        try {
+            Files.write(Paths.get(getOutputPath()), encoded);
+
         } catch (IOException e) {
             logger.severe(e.getMessage());
         }

@@ -1,4 +1,4 @@
-package huffman;
+package playing;
 
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectOutputStream;
@@ -25,9 +25,18 @@ public class HuffmanNode implements Comparable<HuffmanNode>, Serializable {
             oos.flush();
             return bos.toByteArray();
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
         }
         return null;
+    }
+
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null) return false;
+        if (!(o instanceof HuffmanNode)) return false;
+        HuffmanNode other = (HuffmanNode) o;
+        return this.data.equals(other.data) && this.frequency == other.frequency;
     }
 
     @Override

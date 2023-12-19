@@ -1,0 +1,14 @@
+
+e
+java:S3518<"CMake sure this expression can't be zero before doing this division.(ìŞ™üÿÿÿÿ8æ™ÅÈ1
+o
+java:S2095R"MUse try-with-resources or close this "FileInputStream" in a "finally" clause.(ÓÆ€ûúÿÿÿÿ8æ™ÅÈ1
+L	java:S106"+Replace this use of System.out by a logger.(Ş¢Ğ„ıÿÿÿÿ8ê™ÅÈ1
+L	java:S1060"+Replace this use of System.out by a logger.(˜¯Øúÿÿÿÿ8ë™ÅÈ1
+L	java:S1069"+Replace this use of System.out by a logger.(©şêÜúÿÿÿÿ8ì™ÅÈ1
+L	java:S106<"+Replace this use of System.out by a logger.(ìŞ™üÿÿÿÿ8ì™ÅÈ1
+]	java:S125r"<This block of commented-out lines of code should be removed.(óÛìúøÿÿÿÿ8å¨ÉÈ1
+Y	java:S125–"<This block of commented-out lines of code should be removed.(öùší8­ÊÈ1
+M	java:S106Ë"+Replace this use of System.out by a logger.(©şêÜúÿÿÿÿ8ù™ÅÈ1
+J
+java:S1128"-Remove this unused import 'java.util.Base64'.(ëŠ»Õ8ß¹ïÈ1
