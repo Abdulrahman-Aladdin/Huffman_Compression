@@ -3,7 +3,7 @@ package playing;
 import java.util.Arrays;
 import java.util.Iterator;
 
-public class ArrayTable implements FrequencyTable <Character, Integer>, Iterable<ArrayEntry> {
+public class ArrayTable implements FrequencyTable <String, Integer>, Iterable<ArrayEntry> {
 
     Integer[] arr;
 
@@ -13,13 +13,13 @@ public class ArrayTable implements FrequencyTable <Character, Integer>, Iterable
     }
 
     @Override
-    public void increment(Character key) {
-        arr[key]++;
+    public void increment(String key) {
+        arr[key.charAt(0)]++;
     }
 
     @Override
-    public Integer getFrequencyOf(Character key) {
-        return arr[key];
+    public Integer getFrequencyOf(String key) {
+        return arr[key.charAt(0)];
     }
 
     @Override

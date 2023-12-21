@@ -3,7 +3,7 @@ package playing;
 public class Main {
 
     public static void main(String[] args) {
-        int chunkSize = 1;
+        int chunkSize = 4;
         Compressor compressor = new Compressor();
         String fileName = "dd.seq";
         String path = "/media/ebn_aladdin/NoName/My-GitHub/Huffman_Compression/huffmanCode/" + fileName;

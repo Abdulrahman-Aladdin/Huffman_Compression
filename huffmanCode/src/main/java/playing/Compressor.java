@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.PriorityQueue;
 
 public class Compressor {
-    HashMap<String, Integer> frequencies;
+    FrequencyTable<String, Integer> frequencies;
     HashMap<String, String> codes;
 
     int chunkSize;
@@ -22,7 +22,6 @@ public class Compressor {
     int smallestChunkSize = (int) 1e9;
 
     public Compressor() {
-        frequencies = new HashMap<>();
         codes = new HashMap<>();
         chunkSize = 1;
         root = null;
@@ -32,6 +31,11 @@ public class Compressor {
     public void compress (String path, int chunkSize) {
         System.out.println("Compressing...");
         this.chunkSize = chunkSize;
+        if (chunkSize == 1) {
+            this.frequencies = new ArrayTable();
+        } else {
+            this.frequencies = new HashTable();
+        }
         this.path = path;
         long startTime = System.currentTimeMillis();
         readFile(path);
@@ -52,7 +56,7 @@ public class Compressor {
         long totalLength = 0;
 
         for (Map.Entry<String, String> entry : codes.entrySet()) {
-            totalLength += (long) frequencies.get(entry.getKey()) * entry.getValue().length();
+            totalLength += (long) frequencies.getFrequencyOf(entry.getKey()) * entry.getValue().length();
         }
 
         byte offset = (byte) ((8 - (int) totalLength % 8) % 8);
@@ -225,7 +229,7 @@ public class Compressor {
             if (chunk.length() < smallestChunkSize) {
                 smallestChunkSize = chunk.length();
             }
-            frequencies.put(chunk, frequencies.getOrDefault(chunk, 0) + 1);
+            frequencies.increment(chunk);
         }
         return remainingString;
     }
@@ -233,8 +237,14 @@ public class Compressor {
     private HuffmanNode constructHuffmanTree() {
         PriorityQueue<HuffmanNode> priorityQueue = new PriorityQueue<>();
 
-        for (Map.Entry<String, Integer> entry : frequencies.entrySet()) {
-            priorityQueue.add(new HuffmanNode(entry.getKey(), entry.getValue(), null, null));
+        if (chunkSize == 1) {
+            for (ArrayEntry entry : (ArrayTable) frequencies) {
+                priorityQueue.add(new HuffmanNode(entry.key.toString(), entry.value, null, null));
+            }
+        } else {
+            for (Map.Entry<String, Integer> entry : (HashTable) frequencies) {
+                priorityQueue.add(new HuffmanNode(entry.getKey(), entry.getValue(), null, null));
+            }
         }
 
         while (priorityQueue.size() > 1) {
@@ -287,7 +297,7 @@ public class Compressor {
 
         if (!remainingString.isEmpty()) {
             smallestChunkSize = remainingString.length();
-            frequencies.put(remainingString, 1);
+            frequencies.increment(remainingString);
         }
     }
 
