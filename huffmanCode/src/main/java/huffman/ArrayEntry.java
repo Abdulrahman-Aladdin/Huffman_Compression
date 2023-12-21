@@ -1,4 +1,4 @@
-package playing;
+package huffman;
 
 public class ArrayEntry {
     Character key;

@@ -1,4 +1,4 @@
-package playing;
+package huffman;
 
 import java.util.Arrays;
 import java.util.Iterator;

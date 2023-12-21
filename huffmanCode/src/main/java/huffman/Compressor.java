@@ -1,4 +1,4 @@
-package playing;
+package huffman;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -6,6 +6,8 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.PriorityQueue;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class Compressor {
     FrequencyTable<String, Integer> frequencies;
@@ -18,6 +20,8 @@ public class Compressor {
 
     HuffmanNode root;
 
+    Logger logger = Logger.getLogger(Compressor.class.getName());
+
     int maxChunkSize = -1;
     int smallestChunkSize = (int) 1e9;
 
@@ -25,11 +29,11 @@ public class Compressor {
         codes = new HashMap<>();
         chunkSize = 1;
         root = null;
-        bufferSize = 1024;
+        bufferSize = 1024 * 1024;
     }
 
     public void compress (String path, int chunkSize) {
-        System.out.println("Compressing...");
+        logger.info("Compressing...");
         this.chunkSize = chunkSize;
         if (chunkSize == 1) {
             this.frequencies = new ArrayTable();
@@ -39,14 +43,9 @@ public class Compressor {
         this.path = path;
         long startTime = System.currentTimeMillis();
         readFile(path);
-        long readingEndTime = System.currentTimeMillis();
-
-        System.out.println("reading time -> " + (readingEndTime - startTime) / 1000.0);
 
         root = constructHuffmanTree();
         getCodes(root, "");
-
-        System.out.println("constructing tree -> " + (System.currentTimeMillis() - readingEndTime) / 1000.0);
 
         int[] t = new int[] {0};
 
@@ -63,7 +62,7 @@ public class Compressor {
 
         writeCompressedFile(outputPath, offset, t[0]);
         long end = System.currentTimeMillis();
-        System.out.println("time: " + (end - startTime) / 1000.0);
+        logger.log(Level.INFO, "Compression time -> {0} seconds", (end - startTime) / 1000.0);
 
         long compressedSize = 0;
         long originalSize = 0;
@@ -71,11 +70,11 @@ public class Compressor {
         try {
             compressedSize = Files.size(Path.of(outputPath));
             originalSize = Files.size(Path.of(path));
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
+        } catch (IOException e) {
+            logger.severe(e.getMessage());
         }
 
-        System.out.println("compression ratio -> " + compressedSize / (double) originalSize);
+        logger.log(Level.INFO, "compression ratio -> {0}", compressedSize / ((originalSize == 0)? 1.0 : (double) originalSize));
     }
 
     private boolean traverse(HuffmanNode root, int[] t) {
@@ -103,10 +102,10 @@ public class Compressor {
             dos.writeInt(smallestChunkSize);
             dos.writeInt(codes.size());
             dos.writeInt(t);
-            writeOptimizedMap(fos, root, dos);
+            writeOptimizedMap(root, dos);
             writeCompressedData(fos, offset);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.severe(e.getMessage());
         }
     }
 
@@ -132,22 +131,15 @@ public class Compressor {
                     break;
                 }
 
-                long start = System.currentTimeMillis();
                 String[] data = compressChunk(buffer, binaryString);
                 binaryString = data[1];
                 String compressed = remainingString + data[0];
                 long numberOfBytes = compressed.length() / 8;
                 remainingString = compressed.substring((int) numberOfBytes * 8);
 
-                long st = System.currentTimeMillis();
-
-                // System.out.println("compressing -> " + (st - start) / 1000.0);
-
                 if (numberOfBytes > 0) {
                     writeString(fos, compressed.substring(0, (int) numberOfBytes * 8), (int) numberOfBytes);
                 }
-                long end = System.currentTimeMillis();
-                // System.out.println("write chunk -> " + (end - st) / 1000.0);
 
                 remaining -= buffer.length;
             }
@@ -164,16 +156,16 @@ public class Compressor {
             fis.close();
     }
 
-    private void writeOptimizedMap(BufferedOutputStream fos, HuffmanNode root, DataOutputStream dos) throws IOException {
+    private void writeOptimizedMap(HuffmanNode root, DataOutputStream dos) throws IOException {
         if (root.data != null) {
             for (char c : root.data.toCharArray()) {
                 dos.writeChar(c);
             }
-            dos.writeInt(codes.get(root.data).length());
+            dos.writeByte(codes.get(root.data).length());
             return;
         }
-        writeOptimizedMap(fos, root.left, dos);
-        writeOptimizedMap(fos, root.right, dos);
+        writeOptimizedMap(root.left, dos);
+        writeOptimizedMap(root.right, dos);
     }
 
     private String[] compressChunk(byte[] buffer, String remainingString) {
@@ -199,15 +191,6 @@ public class Compressor {
         fos.write(bytes);
     }
 
-    private void writeMap(BufferedOutputStream fos) throws IOException {
-        HashMap<String, String> map = new HashMap<>();
-        for (Map.Entry<String, String> entry : codes.entrySet()) {
-            map.put(entry.getValue(), entry.getKey());
-        }
-        ObjectOutputStream oos = new ObjectOutputStream(fos);
-        oos.writeObject(map);
-    }
-
     private String getOutputPath(String path) {
         Path inputPath = Path.of(path);
         String fileName = inputPath.getFileName().toString();
@@ -215,11 +198,11 @@ public class Compressor {
     }
 
     private String process(byte[] bytes, String remainingString) {
-        long st = System.currentTimeMillis();
-        String s = remainingString + byteArrayToString(bytes);
+        StringBuilder s = new StringBuilder(remainingString);
+        s.append(byteArrayToString(bytes));
         int remaining = s.length() % chunkSize;
         remainingString = s.substring(s.length() - remaining, s.length());
-        s = s.substring(0, s.length() - remaining);
+        s.delete(s.length() - remaining, s.length());
 
         for (int i = 0; i < s.length(); i += chunkSize) {
             String chunk = s.substring(i, Math.min(i + chunkSize, s.length()));
@@ -250,7 +233,9 @@ public class Compressor {
         while (priorityQueue.size() > 1) {
             HuffmanNode left = priorityQueue.poll();
             HuffmanNode right = priorityQueue.poll();
-
+            if (right == null) {
+                continue;
+            }
             HuffmanNode parent = new HuffmanNode(null, left.frequency + right.frequency, left, right);
 
             priorityQueue.add(parent);
@@ -279,10 +264,8 @@ public class Compressor {
             long remaining = Files.size(Path.of(path));
 
             while (remaining > 0) {
-                long st = System.currentTimeMillis();
                 byte[] buffer = new byte[Math.min(bufferSize, (int) remaining)];
                 int n = fis.read(buffer);
-                long end = System.currentTimeMillis();
 
                 if (n == -1) {
                     break;
@@ -292,7 +275,7 @@ public class Compressor {
             }
 
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            logger.severe(e.getMessage());
         }
 
         if (!remainingString.isEmpty()) {

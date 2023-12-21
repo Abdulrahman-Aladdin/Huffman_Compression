@@ -29,3 +29,15 @@ X
 (src/main/java/playing/ArrayIterator.java,3/b/3b577ea9c76e6375c384f12be48e56281e031cfd
 U
 %src/main/java/playing/ArrayEntry.java,2/3/23629b9742d3837df66b7746e82f254af500e493
+U
+%src/main/java/huffman/ArrayTable.java,9/8/98ec8ae90308ca29ef667a679fc42fd6a728b0ec
+T
+$src/main/java/huffman/HashTable.java,b/f/bf3eb72f012c1f91575d4354bc8450f872026646
+X
+(src/main/java/huffman/ArrayIterator.java,e/d/edf1956a53cd35b79014a3957d79426f50490846
+U
+%src/main/java/huffman/Compressor.java,2/1/210f7d813ee2b8254f5d19000164bb89865abc43
+W
+'src/main/java/huffman/Decompressor.java,0/3/034dba069ebbef989d0120ff8baaf86ddae65962
+Y
+)src/main/java/huffman/FrequencyTable.java,e/e/eef9271d58b7c794c76dd93643b026e9b5e30ecb

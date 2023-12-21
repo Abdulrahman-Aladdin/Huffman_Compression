@@ -1,15 +1,11 @@
 package huffman;
 
-import java.io.ByteArrayOutputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
-
-public class HuffmanNode implements Comparable<HuffmanNode>, Serializable {
-    public final String data;
+public class HuffmanNode implements Comparable<HuffmanNode> {
+    public String data;
     public final int frequency;
 
-    public final HuffmanNode left;
-    public final HuffmanNode right;
+    public HuffmanNode left;
+    public HuffmanNode right;
 
     public HuffmanNode(String data, int frequency, HuffmanNode left, HuffmanNode right) {
         this.data = data;
@@ -18,16 +14,11 @@ public class HuffmanNode implements Comparable<HuffmanNode>, Serializable {
         this.right = right;
     }
 
-    public static byte[] toBytes(HuffmanNode root) {
-        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            ObjectOutputStream oos = new ObjectOutputStream(bos);
-            oos.writeObject(root);
-            oos.flush();
-            return bos.toByteArray();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
+    @Override
+    public boolean equals(Object o) {
+        if (o == null) return false;
+        if (!(o instanceof HuffmanNode other)) return false;
+        return this.data.equals(other.data) && this.frequency == other.frequency;
     }
 
     @Override

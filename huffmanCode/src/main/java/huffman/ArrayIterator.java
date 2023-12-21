@@ -1,6 +1,7 @@
-package playing;
+package huffman;
 
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 public class ArrayIterator implements Iterator<ArrayEntry> {
 
@@ -21,7 +22,9 @@ public class ArrayIterator implements Iterator<ArrayEntry> {
 
     @Override
     public ArrayEntry next() {
-        while (arr.arr[idx] == 0) idx++;
+        if (!hasNext()) {
+            throw new NoSuchElementException();
+        }
         return new ArrayEntry((char) idx, arr.arr[idx++]);
     }
 }

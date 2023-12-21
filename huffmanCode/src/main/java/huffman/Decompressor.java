@@ -1,26 +1,18 @@
-package playing;
+package huffman;
 
-import javax.swing.tree.TreeNode;
 import java.io.*;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.HashMap;
-import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class Decompressor {
 
-    private class Pair {
-        public String data;
-        public int len;
+    private record Pair(String data, int len) {}
 
-        public Pair(String data, int len) {
-            this.data = data;
-            this.len = len;
-        }
-    }
+    Logger logger = Logger.getLogger(Decompressor.class.getName());
 
     private final String path;
-    private final int bufferSize = 1024 * 1024;
     private int offset;
 
     private HuffmanNode root;
@@ -34,11 +26,11 @@ public class Decompressor {
     }
 
     public void decompress() {
-        System.out.println("Decompressing...");
+        logger.info("Decompressing...");
         long startTime = System.currentTimeMillis();
         readFile();
         long end = System.currentTimeMillis();
-        System.out.println("time: " + (end - startTime) / 1000.0);
+        logger.log(Level.INFO, "Decompression time -> {0} seconds", (end - startTime) / 1000.0);
     }
 
     private void readFile() {
@@ -47,7 +39,7 @@ public class Decompressor {
             this.root = readOptimizedMap(fis);
             readCompressedData(fis);
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            logger.severe(e.getMessage());
         }
     }
 
@@ -55,28 +47,41 @@ public class Decompressor {
         long totalLength = fis.available();
         FileOutputStream fos = new FileOutputStream(getOutputPath(path));
         String temp = "";
+
         while (totalLength > 0) {
+            int bufferSize = 1024 * 1024;
             byte[] buffer = new byte[Math.min(bufferSize, (int) totalLength)];
-            int read = fis.read(buffer);
-            StringBuilder sb = new StringBuilder();
+            int n = fis.read(buffer);
+
+            if (n == -1) {
+                break;
+            }
+
+            StringBuilder sb = new StringBuilder(buffer.length * 8);
             for (byte b : buffer) {
-                sb.append(String.format("%8s", Integer.toBinaryString(b & 0xFF)).replace(' ', '0'));
-                if (totalLength == 1) {
-                    sb.delete(sb.length() - offset, sb.length());
+                for (int i = 7; i >= 0; i--) {
+                    sb.append((b >> i) & 1);
                 }
+
+                if (totalLength == 1) {
+                    while (offset > 0) {
+                        sb.deleteCharAt(sb.length() - 1);
+                        offset--;
+                    }
+                }
+
                 totalLength--;
             }
-            // String[] data = getOriginalData(sb.toString(), binaryString);
-
-
 
             String[] data = getOriginalDataOP(sb.toString().toCharArray(), temp, this.root);
             temp = data[1];
-            fos.write(StringToByteArray(data[0]));
+            fos.write(stringToByteArray(data[0]));
         }
+
+        fos.close();
     }
 
-    private byte[] StringToByteArray(String s) {
+    private byte[] stringToByteArray(String s) {
         byte[] bytes = new byte[s.length()];
         for (int i = 0; i < s.length(); i++) {
             bytes[i] = (byte) s.charAt(i);
@@ -91,10 +96,10 @@ public class Decompressor {
         int codesSize = dis.readInt();
         int diffChunk = dis.readInt();
 
-        Pair[] codes = new Pair[codesSize];
+        Pair[] mapEntries = new Pair[codesSize];
         int idx = 0;
 
-        HuffmanNode root = new HuffmanNode(null, 0, null, null);
+        HuffmanNode tempRoot = new HuffmanNode(null, 0, null, null);
 
         for (; idx < codesSize; idx++) {
             StringBuilder sb = new StringBuilder();
@@ -105,23 +110,13 @@ public class Decompressor {
             for (int j = 0; j < limit; j++) {
                 sb.append(dis.readChar());
             }
-//            byte[] buffer = new byte[maxChunkSize];
-//            fis.read(buffer);
-            codes[idx] = new Pair(sb.toString(), dis.readInt());
+            mapEntries[idx] = new Pair(sb.toString(), dis.readByte());
         }
-//        StringBuilder sb = new StringBuilder();
-//        for (int j = 0; j < smallestChunkSize; j++) {
-//            sb.append(dis.readChar());
-//        }
-//        byte[] buffer = new byte[smallestChunkSize];
-//        fis.read(buffer);
-        // codes[idx] = new Pair(sb.toString(), dis.readInt());
+
+        constructTree(tempRoot, mapEntries, new int[]{0}, 0);
 
 
-        constructTree(root, codes, new int[]{0}, 0);
-
-
-        return root;
+        return tempRoot;
     }
 
     private void constructTree(HuffmanNode root, Pair[] codes, int[] idx, int depth) {
@@ -142,55 +137,31 @@ public class Decompressor {
         constructTree(root.right, codes, idx, depth + 1);
     }
 
-    private void printTree(HuffmanNode root) {
-        if (root == null) {
-            return;
-        }
-        if (root.data != null) {
-            System.out.println(root.data);
-        }
-        printTree(root.left);
-        printTree(root.right);
-    }
-
     private String[] getOriginalDataOP(char[] binaryString, String rem, HuffmanNode originalRoot) {
         StringBuilder sb = new StringBuilder();
         StringBuilder remaining = new StringBuilder();
-        HuffmanNode root = originalRoot;
+        HuffmanNode tempRoot = originalRoot;
         for (char c : rem.toCharArray()) {
             if (c == '0') {
-                root = root.left;
+                tempRoot = tempRoot.left;
             } else {
-                root = root.right;
+                tempRoot = tempRoot.right;
             }
         }
         for (char c : binaryString) {
             if (c == '0') {
-                root = root.left;
+                tempRoot = tempRoot.left;
             } else {
-                root = root.right;
+                tempRoot = tempRoot.right;
             }
             remaining.append(c);
-            if (root.data != null) {
-                sb.append(root.data);
-                root = originalRoot;
+            if (tempRoot.data != null) {
+                sb.append(tempRoot.data);
+                tempRoot = originalRoot;
                 remaining = new StringBuilder();
             }
         }
         return new String[] {sb.toString(), remaining.toString()};
-    }
-
-    private String[] getOriginalData(String binaryString, String remainingString) {
-        StringBuilder sb = new StringBuilder();
-        StringBuilder temp = new StringBuilder(remainingString);
-        for (int i = 0; i < binaryString.length(); i++) {
-            temp.append(binaryString.charAt(i));
-            if (codes.containsKey(temp.toString())) {
-                sb.append(codes.get(temp.toString()));
-                temp = new StringBuilder();
-            }
-        }
-        return new String[] { sb.toString(), temp.toString() };
     }
 
     private String getOutputPath(String path) {
@@ -202,10 +173,5 @@ public class Decompressor {
         } else {
             return inputPath.resolveSibling("extracted." + parts[2]).toString();
         }
-    }
-
-    private void readMap(FileInputStream fis) throws IOException, ClassNotFoundException {
-        ObjectInputStream ois = new ObjectInputStream(fis);
-        codes = (HashMap<String, String>) ois.readObject();
     }
 }

@@ -1,4 +1,4 @@
-package playing;
+package huffman;
 
 import java.util.HashMap;
 import java.util.Iterator;
