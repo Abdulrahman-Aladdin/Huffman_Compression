@@ -3,7 +3,6 @@ package playing;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.PriorityQueue;
@@ -17,11 +16,17 @@ public class Compressor {
 
     int bufferSize;
 
+    HuffmanNode root;
+
+    int maxChunkSize = -1;
+    int smallestChunkSize = (int) 1e9;
+
     public Compressor() {
         frequencies = new HashMap<>();
         codes = new HashMap<>();
         chunkSize = 1;
-        bufferSize = 1024 * 1024 * 32;
+        root = null;
+        bufferSize = 1024;
     }
 
     public void compress (String path, int chunkSize) {
@@ -30,20 +35,29 @@ public class Compressor {
         this.path = path;
         long startTime = System.currentTimeMillis();
         readFile(path);
+        long readingEndTime = System.currentTimeMillis();
 
-        HuffmanNode root = constructHuffmanTree();
+        System.out.println("reading time -> " + (readingEndTime - startTime) / 1000.0);
+
+        root = constructHuffmanTree();
         getCodes(root, "");
+
+        System.out.println("constructing tree -> " + (System.currentTimeMillis() - readingEndTime) / 1000.0);
+
+        int[] t = new int[] {0};
+
+        traverse(root, t);
 
         String outputPath = getOutputPath(path);
         long totalLength = 0;
 
-        for (Map.Entry<String, Integer> entry : frequencies.entrySet()) {
-            totalLength += (long) entry.getValue() * codes.get(entry.getKey()).length();
+        for (Map.Entry<String, String> entry : codes.entrySet()) {
+            totalLength += (long) frequencies.get(entry.getKey()) * entry.getValue().length();
         }
 
         byte offset = (byte) ((8 - (int) totalLength % 8) % 8);
 
-        writeCompressedFile(outputPath, offset);
+        writeCompressedFile(outputPath, offset, t[0]);
         long end = System.currentTimeMillis();
         System.out.println("time: " + (end - startTime) / 1000.0);
 
@@ -60,10 +74,32 @@ public class Compressor {
         System.out.println("compression ratio -> " + compressedSize / (double) originalSize);
     }
 
-    private void writeCompressedFile(String path, byte offset) {
-        try (FileOutputStream fos = new FileOutputStream(path)) {
+    private boolean traverse(HuffmanNode root, int[] t) {
+        if (root == null) {
+            return false;
+        }
+        if (root.data != null && root.data.length() == maxChunkSize) {
+            t[0]++;
+            return false;
+        }
+        if (root.data != null && root.data.length() == smallestChunkSize) {
+            return true;
+        }
+        if (traverse(root.left, t)) {
+            return true;
+        }
+        return traverse(root.right, t);
+    }
+
+    private void writeCompressedFile(String path, byte offset, int t) {
+        try (BufferedOutputStream fos = new BufferedOutputStream(new FileOutputStream(path), bufferSize)) {
             fos.write(offset);
-            writeMap(fos);
+            DataOutputStream dos = new DataOutputStream(fos);
+            dos.writeInt(maxChunkSize);
+            dos.writeInt(smallestChunkSize);
+            dos.writeInt(codes.size());
+            dos.writeInt(t);
+            writeOptimizedMap(fos, root, dos);
             writeCompressedData(fos, offset);
         } catch (Exception e) {
             e.printStackTrace();
@@ -78,10 +114,11 @@ public class Compressor {
         return sb.toString();
     }
 
-    private void writeCompressedData(FileOutputStream fos, int offset) throws IOException {
-            FileInputStream fis = new FileInputStream(path);
+    private void writeCompressedData(BufferedOutputStream fos, int offset) throws IOException {
+            BufferedInputStream fis = new BufferedInputStream(new FileInputStream(path), bufferSize);
             long remaining = Files.size(Path.of(path));
             String remainingString = "";
+            String binaryString = "";
 
             while (remaining > 0) {
                 byte[] buffer = new byte[Math.min(bufferSize, (int) remaining)];
@@ -91,15 +128,28 @@ public class Compressor {
                     break;
                 }
 
-                String compressed = remainingString + compressChunk(buffer);
+                long start = System.currentTimeMillis();
+                String[] data = compressChunk(buffer, binaryString);
+                binaryString = data[1];
+                String compressed = remainingString + data[0];
                 long numberOfBytes = compressed.length() / 8;
                 remainingString = compressed.substring((int) numberOfBytes * 8);
+
+                long st = System.currentTimeMillis();
+
+                // System.out.println("compressing -> " + (st - start) / 1000.0);
 
                 if (numberOfBytes > 0) {
                     writeString(fos, compressed.substring(0, (int) numberOfBytes * 8), (int) numberOfBytes);
                 }
+                long end = System.currentTimeMillis();
+                // System.out.println("write chunk -> " + (end - st) / 1000.0);
 
                 remaining -= buffer.length;
+            }
+
+            if (!binaryString.isEmpty()) {
+                remainingString += codes.get(binaryString);
             }
 
             if (!remainingString.isEmpty()) {
@@ -110,19 +160,33 @@ public class Compressor {
             fis.close();
     }
 
-    private String compressChunk(byte[] buffer) {
-        // String s = Base64.getEncoder().encodeToString(buffer).replace("=", "");
-        String s = byteArrayToString(buffer);
+    private void writeOptimizedMap(BufferedOutputStream fos, HuffmanNode root, DataOutputStream dos) throws IOException {
+        if (root.data != null) {
+            for (char c : root.data.toCharArray()) {
+                dos.writeChar(c);
+            }
+            dos.writeInt(codes.get(root.data).length());
+            return;
+        }
+        writeOptimizedMap(fos, root.left, dos);
+        writeOptimizedMap(fos, root.right, dos);
+    }
+
+    private String[] compressChunk(byte[] buffer, String remainingString) {
+        String s = remainingString + byteArrayToString(buffer);
+        int remaining = s.length() % chunkSize;
+        remainingString = s.substring(s.length() - remaining);
+        s = s.substring(0, s.length() - remaining);
 
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < s.length(); i += chunkSize) {
             String chunk = s.substring(i, Math.min(i + chunkSize, s.length()));
             sb.append(codes.get(chunk));
         }
-        return sb.toString();
+        return new String[]{sb.toString(), remainingString};
     }
 
-    private void writeString (FileOutputStream fos, String compressed, int numberOfBytes) throws IOException {
+    private void writeString (BufferedOutputStream fos, String compressed, int numberOfBytes) throws IOException {
         byte[] bytes = new byte[numberOfBytes];
         for (int i = 0; i < compressed.length(); i += 8) {
             String byteString = compressed.substring(i, Math.min(i + 8, compressed.length()));
@@ -131,7 +195,7 @@ public class Compressor {
         fos.write(bytes);
     }
 
-    private void writeMap(FileOutputStream fos) throws IOException {
+    private void writeMap(BufferedOutputStream fos) throws IOException {
         HashMap<String, String> map = new HashMap<>();
         for (Map.Entry<String, String> entry : codes.entrySet()) {
             map.put(entry.getValue(), entry.getKey());
@@ -146,13 +210,24 @@ public class Compressor {
         return inputPath.resolveSibling("20010824." + chunkSize + "." + fileName + ".hc").toString();
     }
 
-    private void process(byte[] bytes) {
-        // String s = Base64.getEncoder().encodeToString(bytes).replace("=", "");
-        String s = byteArrayToString(bytes);
+    private String process(byte[] bytes, String remainingString) {
+        long st = System.currentTimeMillis();
+        String s = remainingString + byteArrayToString(bytes);
+        int remaining = s.length() % chunkSize;
+        remainingString = s.substring(s.length() - remaining, s.length());
+        s = s.substring(0, s.length() - remaining);
+
         for (int i = 0; i < s.length(); i += chunkSize) {
             String chunk = s.substring(i, Math.min(i + chunkSize, s.length()));
+            if (chunk.length() > maxChunkSize) {
+                maxChunkSize = chunk.length();
+            }
+            if (chunk.length() < smallestChunkSize) {
+                smallestChunkSize = chunk.length();
+            }
             frequencies.put(chunk, frequencies.getOrDefault(chunk, 0) + 1);
         }
+        return remainingString;
     }
 
     private HuffmanNode constructHuffmanTree() {
@@ -176,6 +251,9 @@ public class Compressor {
 
     private void getCodes(HuffmanNode root, String code) {
         if (root.data != null) {
+            if (code.isEmpty()) {
+                code = "0";
+            }
             codes.put(root.data, code);
             return;
         }
@@ -184,26 +262,33 @@ public class Compressor {
     }
 
     private void readFile(String path) {
+        String remainingString = "";
 
-        try (FileInputStream fis = new FileInputStream(path)) {
+
+        try (BufferedInputStream fis = new BufferedInputStream(new FileInputStream(path))) {
             long remaining = Files.size(Path.of(path));
 
             while (remaining > 0) {
+                long st = System.currentTimeMillis();
                 byte[] buffer = new byte[Math.min(bufferSize, (int) remaining)];
                 int n = fis.read(buffer);
+                long end = System.currentTimeMillis();
 
                 if (n == -1) {
                     break;
                 }
-                process(buffer);
+                remainingString = process(buffer, remainingString);
                 remaining -= buffer.length;
             }
 
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
+
+        if (!remainingString.isEmpty()) {
+            smallestChunkSize = remainingString.length();
+            frequencies.put(remainingString, 1);
+        }
     }
-
-
 
 }

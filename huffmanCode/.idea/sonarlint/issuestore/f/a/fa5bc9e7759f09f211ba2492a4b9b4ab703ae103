@@ -1,14 +1,36 @@
 
 e
-java:S3518<"CMake sure this expression can't be zero before doing this division.(ìŞ™üÿÿÿÿ8æ™ÅÈ1
-o
-java:S2095R"MUse try-with-resources or close this "FileInputStream" in a "finally" clause.(ÓÆ€ûúÿÿÿÿ8æ™ÅÈ1
-L	java:S106"+Replace this use of System.out by a logger.(Ş¢Ğ„ıÿÿÿÿ8ê™ÅÈ1
-L	java:S1060"+Replace this use of System.out by a logger.(˜¯Øúÿÿÿÿ8ë™ÅÈ1
-L	java:S1069"+Replace this use of System.out by a logger.(©şêÜúÿÿÿÿ8ì™ÅÈ1
-L	java:S106<"+Replace this use of System.out by a logger.(ìŞ™üÿÿÿÿ8ì™ÅÈ1
-]	java:S125r"<This block of commented-out lines of code should be removed.(óÛìúøÿÿÿÿ8å¨ÉÈ1
-Y	java:S125–"<This block of commented-out lines of code should be removed.(öùší8­ÊÈ1
-M	java:S106Ë"+Replace this use of System.out by a logger.(©şêÜúÿÿÿÿ8ù™ÅÈ1
-J
-java:S1128"-Remove this unused import 'java.util.Base64'.(ëŠ»Õ8ß¹ïÈ1
+java:S3518J"CMake sure this expression can't be zero before doing this division.(ìŞ™üÿÿÿÿ8ªœèÈ1
+n
+java:S2095v"QUse try-with-resources or close this "BufferedInputStream" in a "finally" clause.(Ù©³ä8ªœèÈ1
+L	java:S106!"+Replace this use of System.out by a logger.(Ş¢Ğ„ıÿÿÿÿ8¯œèÈ1
+G	java:S106("+Replace this use of System.out by a logger.(öıøÎ8¯œèÈ1
+L	java:S106-"+Replace this use of System.out by a logger.(ëß¸Îÿÿÿÿÿ8¯œèÈ1
+L	java:S106>"+Replace this use of System.out by a logger.(˜¯Øúÿÿÿÿ8±œèÈ1
+L	java:S106G"+Replace this use of System.out by a logger.(©şêÜúÿÿÿÿ8²œèÈ1
+L	java:S106J"+Replace this use of System.out by a logger.(ìŞ™üÿÿÿÿ8²œèÈ1
+T
+java:S1854Š"6Remove this useless assignment to local variable "st".(»É×Ò8¶œèÈ1
+W
+java:S1854ƒ"9Remove this useless assignment to local variable "start".(’Ã¼8¶œèÈ1
+U
+java:S1854‘"7Remove this useless assignment to local variable "end".(Ğí‰Á8¶œèÈ1
+H
+java:S1481ƒ"*Remove this unused "start" local variable.(’Ã¼8¸œèÈ1
+E
+java:S1481Š"'Remove this unused "st" local variable.(»É×Ò8¸œèÈ1
+Y	java:S125Œ"<This block of commented-out lines of code should be removed.(ØÕç¾8¸œèÈ1
+F
+java:S1481‘"(Remove this unused "end" local variable.(Ğí‰Á8¹œèÈ1
+^	java:S125’"<This block of commented-out lines of code should be removed.(â’Ÿïüÿÿÿÿ8¹œèÈ1
+T
+java:S1854Ö"6Remove this useless assignment to local variable "st".(»É×Ò8ÀœèÈ1
+E
+java:S1481Ö"'Remove this unused "st" local variable.(»É×Ò8ÀœèÈ1
+E
+java:S1481"'Remove this unused "st" local variable.(»É×Ò8ÅœèÈ1
+F
+java:S1481“"(Remove this unused "end" local variable.(Ğí‰Á8ÅœèÈ1
+M	java:S106"+Replace this use of System.out by a logger.(©şêÜúÿÿÿÿ8ÆœèÈ1
+K
+java:S1144Æ"-Remove this unused private "writeMap" method.(î•´£8ÆœèÈ1
